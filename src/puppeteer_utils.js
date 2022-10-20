@@ -6,20 +6,19 @@ const path = require("path");
 const fs = require("fs");
 const { createTracker, augmentTimeoutError } = require("./tracker");
 
-const errorToString = jsHandle =>
-  jsHandle.executionContext().evaluate(e => e.toString(), jsHandle);
+const errorToString = (jsHandle) => jsHandle.executionContext().evaluate((e) => e.toString(), jsHandle);
 
-const objectToJson = jsHandle => jsHandle.jsonValue();
+const objectToJson = (jsHandle) => jsHandle.jsonValue();
 
 /**
  * @param {{page: Page, options: {skipThirdPartyRequests: true}, basePath: string }} opt
  * @return {Promise<void>}
  */
-const skipThirdPartyRequests = async opt => {
+const skipThirdPartyRequests = async (opt) => {
   const { page, options, basePath } = opt;
   if (!options.skipThirdPartyRequests) return;
   await page.setRequestInterception(true);
-  page.on("request", request => {
+  page.on("request", (request) => {
     if (request.url().startsWith(basePath)) {
       request.continue();
     } else {
@@ -32,68 +31,56 @@ const skipThirdPartyRequests = async opt => {
  * @param {{page: Page, options: {sourceMaps: boolean}, route: string, onError: ?function }} opt
  * @return {void}
  */
-const enableLogging = opt => {
+const enableLogging = (opt) => {
   const { page, options, route, onError, sourcemapStore } = opt;
-  page.on("console", msg => {
+  page.on("console", (msg) => {
     const text = msg.text();
     if (text === "JSHandle@object") {
-      Promise.all(msg.args().map(objectToJson)).then(args =>
-        console.log(`💬  console.log at ${route}:`, ...args)
-      );
+      Promise.all(msg.args().map(objectToJson)).then((args) => console.log(`💬  console.log at ${route}:`, ...args));
     } else if (text === "JSHandle@error") {
-      Promise.all(msg.args().map(errorToString)).then(args =>
-        console.log(`💬  console.log at ${route}:`, ...args)
-      );
+      Promise.all(msg.args().map(errorToString)).then((args) => console.log(`💬  console.log at ${route}:`, ...args));
     } else {
       console.log(`️️️💬  console.log at ${route}:`, text);
     }
   });
-  page.on("error", msg => {
+  page.on("error", (msg) => {
     console.log(`🔥  error at ${route}:`, msg);
     onError && onError();
   });
-  page.on("pageerror", e => {
+  page.on("pageerror", (e) => {
     if (options.sourceMaps) {
       mapStackTrace(e.stack || e.message, {
         isChromeOrEdge: true,
-        store: sourcemapStore || {}
+        store: sourcemapStore || {},
       })
-        .then(result => {
+        .then((result) => {
           // TODO: refactor mapStackTrace: return array not a string, return first row too
           const stackRows = result.split("\n");
-          const puppeteerLine =
-            stackRows.findIndex(x => x.includes("puppeteer")) ||
-            stackRows.length - 1;
+          const puppeteerLine = stackRows.findIndex((x) => x.includes("puppeteer")) || stackRows.length - 1;
 
           console.log(
-            `🔥  pageerror at ${route}: ${(e.stack || e.message).split(
-              "\n"
-            )[0] + "\n"}${stackRows.slice(0, puppeteerLine).join("\n")}`
+            `🔥  pageerror at ${route}: ${(e.stack || e.message).split("\n")[0] + "\n"}${stackRows
+              .slice(0, puppeteerLine)
+              .join("\n")}`
           );
         })
-        .catch(e2 => {
+        .catch((e2) => {
           console.log(`🔥  pageerror at ${route}:`, e);
-          console.log(
-            `️️️⚠️  warning at ${route} (error in source maps):`,
-            e2.message
-          );
+          console.log(`️️️⚠️  warning at ${route} (error in source maps):`, e2.message);
         });
     } else {
       console.log(`🔥  pageerror at ${route}:`, e);
     }
     onError && onError();
   });
-  page.on("response", response => {
+  page.on("response", (response) => {
     if (response.status() >= 400) {
       let route = "";
       try {
-        route = response._request
-          .headers()
-          .referer.replace(`http://localhost:${options.port}`, "");
+        route = response._request.headers().referer.replace(`http://localhost:${options.port}`, "");
+        // eslint-disable-next-line no-empty
       } catch (e) {}
-      console.log(
-        `️️️⚠️  warning at ${route}: got ${response.status()} HTTP code for ${response.url()}`
-      );
+      console.log(`️️️⚠️  warning at ${route}: got ${response.status()} HTTP code for ${response.url()}`);
     }
   });
   // page.on("requestfailed", msg =>
@@ -105,10 +92,10 @@ const enableLogging = opt => {
  * @param {{page: Page}} opt
  * @return {Promise<Array<string>>}
  */
-const getLinks = async opt => {
+const getLinks = async (opt) => {
   const { page } = opt;
   const anchors = await page.evaluate(() =>
-    Array.from(document.querySelectorAll("a,link[rel='alternate']")).map(anchor => {
+    Array.from(document.querySelectorAll("a,link[rel='alternate']")).map((anchor) => {
       if (anchor.href.baseVal) {
         const a = document.createElement("a");
         a.href = anchor.href.baseVal;
@@ -119,7 +106,7 @@ const getLinks = async opt => {
   );
 
   const iframes = await page.evaluate(() =>
-    Array.from(document.querySelectorAll("iframe")).map(iframe => iframe.src)
+    Array.from(document.querySelectorAll("iframe")).map((iframe) => iframe.src)
   );
   return anchors.concat(iframes);
 };
@@ -130,16 +117,8 @@ const getLinks = async opt => {
  * @param {{options: *, basePath: string, beforeFetch: ?(function({ page: Page, route: string }):Promise), afterFetch: ?(function({ page: Page, browser: Browser, route: string }):Promise), onEnd: ?(function():void)}} opt
  * @return {Promise}
  */
-const crawl = async opt => {
-  const {
-    options,
-    basePath,
-    beforeFetch,
-    afterFetch,
-    onEnd,
-    publicPath,
-    sourceDir
-  } = opt;
+const crawl = async (opt) => {
+  const { options, basePath, beforeFetch, afterFetch, onEnd, publicPath, sourceDir } = opt;
   let shuttingDown = false;
   let streamClosed = false;
 
@@ -148,14 +127,12 @@ const crawl = async opt => {
       process.exit(1);
     } else {
       shuttingDown = true;
-      console.log(
-        "\nGracefully shutting down. To exit immediately, press ^C again"
-      );
+      console.log("\nGracefully shutting down. To exit immediately, press ^C again");
     }
   };
   process.on("SIGINT", onSigint);
 
-  const onUnhandledRejection = error => {
+  const onUnhandledRejection = (error) => {
     console.log("🔥  UnhandledPromiseRejectionWarning", error);
     shuttingDown = true;
   };
@@ -172,7 +149,7 @@ const crawl = async opt => {
    * @param {string} path
    * @returns {void}
    */
-  const addToQueue = newUrl => {
+  const addToQueue = (newUrl) => {
     const { hostname, search, hash, port } = url.parse(newUrl);
     newUrl = newUrl.replace(`${search || ""}${hash || ""}`, "");
 
@@ -199,14 +176,14 @@ const crawl = async opt => {
     args: options.puppeteerArgs,
     executablePath: options.puppeteerExecutablePath,
     ignoreHTTPSErrors: options.puppeteerIgnoreHTTPSErrors,
-    handleSIGINT: false
+    handleSIGINT: false,
   });
 
   /**
    * @param {string} pageUrl
    * @returns {Promise<string>}
    */
-  const fetchPage = async pageUrl => {
+  const fetchPage = async (pageUrl) => {
     const route = pageUrl.replace(basePath, "");
 
     let skipExistingFile = false;
@@ -220,11 +197,14 @@ const crawl = async opt => {
     if (!shuttingDown && !skipExistingFile) {
       try {
         const page = await browser.newPage();
-        await page._client.send("ServiceWorker.disable");
+        const client = await page.target().createCDPSession();
+        await client.send("ServiceWorker.enable");
+        await client.send("ServiceWorker.stopAllWorkers");
+
+        // await page._client.send("ServiceWorker.disable");
         await page.setCacheEnabled(options.puppeteer.cache);
         if (options.viewport) await page.setViewport(options.viewport);
-        if (options.skipThirdPartyRequests)
-          await skipThirdPartyRequests({ page, options, basePath });
+        if (options.skipThirdPartyRequests) await skipThirdPartyRequests({ page, options, basePath });
         enableLogging({
           page,
           options,
@@ -232,7 +212,7 @@ const crawl = async opt => {
           onError: () => {
             shuttingDown = true;
           },
-          sourcemapStore
+          sourcemapStore,
         });
         beforeFetch && beforeFetch({ page, route });
         await page.setUserAgent(options.userAgent);
@@ -272,12 +252,12 @@ const crawl = async opt => {
   };
 
   if (options.include) {
-    options.include.map(x => addToQueue(`${basePath}${x}`));
+    options.include.map((x) => addToQueue(`${basePath}${x}`));
   }
 
   return new Promise((resolve, reject) => {
     queue
-      .map(x => _(fetchPage(x)))
+      .map((x) => _(fetchPage(x)))
       .mergeWithLimit(options.concurrency)
       .toArray(async () => {
         process.removeListener("SIGINT", onSigint);

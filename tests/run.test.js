@@ -15,10 +15,10 @@ const snapRun = (fs, options) =>
       // as a result you get `Error: listen EADDRINUSE :::45678`
       // to prevent this we use random port
       port: Math.floor(Math.random() * 1000 + 45000),
-      ...options
+      ...options,
     },
     {
-      fs
+      fs,
     }
   );
 
@@ -26,29 +26,22 @@ describe("validates options", () => {
   test("include option should be an non-empty array", () =>
     run({ include: "" })
       .then(() => expect(true).toEqual(false))
-      .catch(e => expect(e).toEqual("")));
+      .catch((e) => expect(e).toEqual("")));
 
   test("preloadResources option deprecated. Use preloadImages or cacheAjaxRequests", () =>
     run({ preloadResources: true })
       .then(() => expect(true).toEqual(false))
-      .catch(e => expect(e).toEqual("")));
+      .catch((e) => expect(e).toEqual("")));
 
   test("saveAs supported values are html and png", () =>
     run({ saveAs: "json" })
       .then(() => expect(true).toEqual(false))
-      .catch(e => expect(e).toEqual("")));
+      .catch((e) => expect(e).toEqual("")));
 });
 
 describe("one page", () => {
   const source = "tests/examples/one-page";
-  const {
-    fs,
-    createReadStreamMock,
-    createWriteStreamMock,
-    filesCreated,
-    content,
-    name
-  } = mockFs();
+  const { fs, createReadStreamMock, createWriteStreamMock, filesCreated, content, name } = mockFs();
   beforeAll(() => snapRun(fs, { source }));
   test("crawls / and saves as index.html to the same folder", () => {
     expect(filesCreated()).toEqual(1);
@@ -58,9 +51,7 @@ describe("one page", () => {
     );
   });
   test("copies (original) index.html to 200.html", () => {
-    expect(createReadStreamMock.mock.calls).toEqual([
-      [`/${source}/index.html`]
-    ]);
+    expect(createReadStreamMock.mock.calls).toEqual([[`/${source}/index.html`]]);
     expect(createWriteStreamMock.mock.calls).toEqual([[`/${source}/200.html`]]);
   });
 });
@@ -68,11 +59,7 @@ describe("one page", () => {
 describe("saveAs png", () => {
   const source = "tests/examples/one-page";
   const cwd = process.cwd();
-  const {
-    fs: mockedFs,
-    createReadStreamMock,
-    createWriteStreamMock
-  } = mockFs();
+  const { fs: mockedFs, createReadStreamMock, createWriteStreamMock } = mockFs();
   beforeAll(() => snapRun(mockedFs, { source, saveAs: "png" }));
   afterAll(() => writeFileSpy.mockClear());
   test("crawls / and saves as index.png to the same folder", () => {
@@ -80,9 +67,7 @@ describe("saveAs png", () => {
     expect(writeFileSpy.mock.calls[0][0]).toEqual(cwd + `/${source}/index.png`);
   });
   test("copies (original) index.html to 200.html", () => {
-    expect(createReadStreamMock.mock.calls).toEqual([
-      [`/${source}/index.html`]
-    ]);
+    expect(createReadStreamMock.mock.calls).toEqual([[`/${source}/index.html`]]);
     expect(createWriteStreamMock.mock.calls).toEqual([[`/${source}/200.html`]]);
   });
 });
@@ -90,23 +75,15 @@ describe("saveAs png", () => {
 describe("saveAs jpeg", () => {
   const source = "tests/examples/one-page";
   const cwd = process.cwd();
-  const {
-    fs: mockedFs,
-    createReadStreamMock,
-    createWriteStreamMock
-  } = mockFs();
+  const { fs: mockedFs, createReadStreamMock, createWriteStreamMock } = mockFs();
   beforeAll(() => snapRun(mockedFs, { source, saveAs: "jpeg" }));
   afterAll(() => writeFileSpy.mockClear());
   test("crawls / and saves as index.png to the same folder", () => {
     expect(writeFileSpy).toHaveBeenCalledTimes(1);
-    expect(writeFileSpy.mock.calls[0][0]).toEqual(
-      cwd + `/${source}/index.jpeg`
-    );
+    expect(writeFileSpy.mock.calls[0][0]).toEqual(cwd + `/${source}/index.jpeg`);
   });
   test("copies (original) index.html to 200.html", () => {
-    expect(createReadStreamMock.mock.calls).toEqual([
-      [`/${source}/index.html`]
-    ]);
+    expect(createReadStreamMock.mock.calls).toEqual([[`/${source}/index.html`]]);
     expect(createWriteStreamMock.mock.calls).toEqual([[`/${source}/200.html`]]);
   });
 });
@@ -114,47 +91,25 @@ describe("saveAs jpeg", () => {
 describe("respects destination", () => {
   const source = "tests/examples/one-page";
   const destination = "tests/examples/destination";
-  const {
-    fs,
-    createReadStreamMock,
-    createWriteStreamMock,
-    filesCreated,
-    content,
-    name
-  } = mockFs();
+  const { fs, createReadStreamMock, createWriteStreamMock, filesCreated, name } = mockFs();
   beforeAll(() => snapRun(fs, { source, destination }));
   test("crawls / and saves as index.html to destination folder", () => {
     expect(filesCreated()).toEqual(1);
     expect(name(0)).toEqual(`/${destination}/index.html`);
   });
   test("copies (original) index.html to 200.html (to source folder)", () => {
-    expect(createReadStreamMock.mock.calls[0]).toEqual([
-      `/${source}/index.html`
-    ]);
-    expect(createWriteStreamMock.mock.calls[0]).toEqual([
-      `/${source}/200.html`
-    ]);
+    expect(createReadStreamMock.mock.calls[0]).toEqual([`/${source}/index.html`]);
+    expect(createWriteStreamMock.mock.calls[0]).toEqual([`/${source}/200.html`]);
   });
   test("copies (original) index.html to 200.html (to destination folder)", () => {
-    expect(createReadStreamMock.mock.calls[1]).toEqual([
-      `/${source}/index.html`
-    ]);
-    expect(createWriteStreamMock.mock.calls[1]).toEqual([
-      `/${destination}/200.html`
-    ]);
+    expect(createReadStreamMock.mock.calls[1]).toEqual([`/${source}/index.html`]);
+    expect(createWriteStreamMock.mock.calls[1]).toEqual([`/${destination}/200.html`]);
   });
 });
 
 describe("many pages", () => {
   const source = "tests/examples/many-pages";
-  const {
-    fs,
-    createReadStreamMock,
-    createWriteStreamMock,
-    filesCreated,
-    name,
-    names
-  } = mockFs();
+  const { fs, createReadStreamMock, createWriteStreamMock, filesCreated, name, names } = mockFs();
   beforeAll(() => snapRun(fs, { source }));
   test("crawls all links and saves as index.html in separate folders", () => {
     expect(filesCreated()).toEqual(7);
@@ -175,27 +130,19 @@ describe("many pages", () => {
     expect(names()).toEqual(expect.arrayContaining([`/${source}/404.html`]));
   });
   test("copies (original) index.html to 200.html", () => {
-    expect(createReadStreamMock.mock.calls).toEqual([
-      [`/${source}/index.html`]
-    ]);
+    expect(createReadStreamMock.mock.calls).toEqual([[`/${source}/index.html`]]);
     expect(createWriteStreamMock.mock.calls).toEqual([[`/${source}/200.html`]]);
   });
 });
 
 describe("possible to disable crawl option", () => {
   const source = "tests/examples/many-pages";
-  const {
-    fs,
-    createReadStreamMock,
-    createWriteStreamMock,
-    filesCreated,
-    names
-  } = mockFs();
+  const { fs, createReadStreamMock, createWriteStreamMock, filesCreated, names } = mockFs();
   beforeAll(() =>
     snapRun(fs, {
       source,
       crawl: false,
-      include: ["/1", "/2/", "/3#test", "/4?test"]
+      include: ["/1", "/2/", "/3#test", "/4?test"],
     })
   );
   test("crawls all links and saves as index.html in separate folders", () => {
@@ -206,14 +153,12 @@ describe("possible to disable crawl option", () => {
         `/${source}/1/index.html`, // without slash in the end
         `/${source}/2/index.html`, // with slash in the end
         `/${source}/3/index.html`, // ignores hash
-        `/${source}/4/index.html` // ignores query
+        `/${source}/4/index.html`, // ignores query
       ])
     );
   });
   test("copies (original) index.html to 200.html", () => {
-    expect(createReadStreamMock.mock.calls).toEqual([
-      [`/${source}/index.html`]
-    ]);
+    expect(createReadStreamMock.mock.calls).toEqual([[`/${source}/index.html`]]);
     expect(createWriteStreamMock.mock.calls).toEqual([[`/${source}/200.html`]]);
   });
 });
@@ -225,7 +170,7 @@ describe("inlineCss - small file", () => {
     snapRun(fs, {
       source,
       inlineCss: true,
-      include: ["/with-small-css.html"]
+      include: ["/with-small-css.html"],
     })
   );
   // 1. I want to change this behaviour
@@ -238,9 +183,7 @@ describe("inlineCss - small file", () => {
     );
   });
   test("removes <link>", () => {
-    expect(content(0)).not.toMatch(
-      '<link rel="stylesheet"  href="/css/small.css" >'
-    );
+    expect(content(0)).not.toMatch('<link rel="stylesheet"  href="/css/small.css" >');
   });
 });
 
@@ -254,14 +197,10 @@ describe("inlineCss - big file", () => {
     expect(content(0)).toMatch('<style type="text/css">');
   });
   test("inserts <link> in noscript", () => {
-    expect(content(0)).toMatch(
-      '<noscript><link href="/css/big.css" rel="stylesheet"></noscript>'
-    );
+    expect(content(0)).toMatch('<noscript><link href="/css/big.css" rel="stylesheet"></noscript>');
   });
   test('inserts <link rel="preload"> with onload', () => {
-    expect(content(0)).toMatch(
-      '<link href="/css/big.css" rel="preload" as="style" onload="this.rel=\'stylesheet\'">'
-    );
+    expect(content(0)).toMatch('<link href="/css/big.css" rel="preload" as="style" onload="this.rel=\'stylesheet\'">');
   });
   test("inserts loadCSS polyfill", () => {
     expect(content(0)).toMatch('<script type="text/javascript">/*! loadCSS');
@@ -311,7 +250,7 @@ describe("ignoreForPreload", () => {
       source,
       include,
       http2PushManifest: true,
-      ignoreForPreload: ["big.css"]
+      ignoreForPreload: ["big.css"],
     })
   );
   test("writes http2 manifest file", () => {
@@ -327,9 +266,7 @@ describe("preconnectThirdParty", () => {
   beforeAll(() => snapRun(fs, { source, include }));
   test("adds <link rel=preconnect>", () => {
     expect(filesCreated()).toEqual(1);
-    expect(content(0)).toMatch(
-      '<link href="https://fonts.googleapis.com" rel="preconnect">'
-    );
+    expect(content(0)).toMatch('<link href="https://fonts.googleapis.com" rel="preconnect">');
   });
 });
 
@@ -352,7 +289,7 @@ describe("removeStyleTags", () => {
     snapRun(fs, {
       source,
       include,
-      removeStyleTags: true
+      removeStyleTags: true,
     })
   );
   test("removes all <style>", () => {
@@ -390,9 +327,7 @@ describe("preloadImages", () => {
   beforeAll(() => snapRun(fs, { source, include, preloadImages: true }));
   test("adds <link rel=preconnect>", () => {
     expect(filesCreated()).toEqual(1);
-    expect(content(0)).toMatch(
-      '<link as="image" href="/css/bg.png" rel="preload">'
-    );
+    expect(content(0)).toMatch('<link as="image" href="/css/bg.png" rel="preload">');
   });
 });
 
@@ -403,7 +338,7 @@ describe("handles JS errors", () => {
   test("returns rejected promise", () =>
     snapRun(fs, { source, include })
       .then(() => expect(true).toEqual(false))
-      .catch(e => expect(e).toEqual("")));
+      .catch((e) => expect(e).toEqual("")));
 });
 
 describe("You can not run react-snap twice", () => {
@@ -412,7 +347,7 @@ describe("You can not run react-snap twice", () => {
   test("returns rejected promise", () =>
     snapRun(fs, { source })
       .then(() => expect(true).toEqual(false))
-      .catch(e => expect(e).toEqual("")));
+      .catch((e) => expect(e).toEqual("")));
 });
 
 describe("fixWebpackChunksIssue", () => {
@@ -426,14 +361,10 @@ describe("fixWebpackChunksIssue", () => {
     );
   });
   test("leaves root script", () => {
-    expect(content(0)).toMatch(
-      '<script src="/static/js/main.42105999.js"></script>'
-    );
+    expect(content(0)).toMatch('<script src="/static/js/main.42105999.js"></script>');
   });
   test("removes chunk scripts", () => {
-    expect(content(0)).not.toMatch(
-      '<script src="/static/js/0.35040230.chunk.js"></script>'
-    );
+    expect(content(0)).not.toMatch('<script src="/static/js/0.35040230.chunk.js"></script>');
   });
 });
 
@@ -443,9 +374,7 @@ describe("link to file", () => {
   const { fs, names } = mockFs();
   beforeAll(() => snapRun(fs, { source, include }));
   test("link to non-html file", () => {
-    expect(names()).not.toEqual(
-      expect.arrayContaining([`/${source}/css/bg.png`])
-    );
+    expect(names()).not.toEqual(expect.arrayContaining([`/${source}/css/bg.png`]));
   });
   test("link to html file", () => {
     expect(names()).toEqual(expect.arrayContaining([`/${source}/index.html`]));
@@ -464,9 +393,7 @@ describe("snapSaveState", () => {
   // need to set UTC timezone for this test to work
   test.skip("non-JSON compatible values", () => {
     // those don't work
-    expect(content(0)).toMatch(
-      'window["non-json"]=[null,"2000-01-01T00:00:00.000Z",null,{}];'
-    );
+    expect(content(0)).toMatch('window["non-json"]=[null,"2000-01-01T00:00:00.000Z",null,{}];');
   });
   // this test doesn't work
   test.skip("protects from XSS attack", () => {
@@ -481,14 +408,10 @@ describe("saves state of form elements changed via JS", () => {
   beforeAll(() => snapRun(fs, { source, include }));
   test("radio button", () => {
     expect(filesCreated()).toEqual(1);
-    expect(content(0)).toMatch(
-      '<input checked name="radio" type="radio" value="radio1">'
-    );
+    expect(content(0)).toMatch('<input checked name="radio" type="radio" value="radio1">');
   });
   test("checkbox", () => {
-    expect(content(0)).toMatch(
-      '<input checked name="checkbox" type="checkbox" value="checkbox1">'
-    );
+    expect(content(0)).toMatch('<input checked name="checkbox" type="checkbox" value="checkbox1">');
   });
   test("select", () => {
     expect(content(0)).toMatch('<option selected value="option1">');
@@ -502,30 +425,22 @@ describe("cacheAjaxRequests", () => {
   beforeAll(() => snapRun(fs, { source, include, cacheAjaxRequests: true }));
   test("saves ajax response", () => {
     expect(filesCreated()).toEqual(1);
-    expect(content(0)).toMatch(
-      'window.snapStore={"\\u002Fjs\\u002Ftest.json":{"test":1}};'
-    );
+    expect(content(0)).toMatch('window.snapStore={"\\u002Fjs\\u002Ftest.json":{"test":1}};');
   });
 });
 
 describe("don't crawl localhost links on different port", () => {
   const source = "tests/examples/other";
   const include = ["/localhost-links-different-port.html"];
-  
+
   const { fs, filesCreated, names } = mockFs();
 
   beforeAll(() => snapRun(fs, { source, include }));
   test("only one file is crawled", () => {
     expect(filesCreated()).toEqual(1);
-    expect(names()).toEqual(
-      expect.arrayContaining([
-        `/${source}/localhost-links-different-port.html`
-      ])
-    );
+    expect(names()).toEqual(expect.arrayContaining([`/${source}/localhost-links-different-port.html`]));
   });
-  
 });
-
 
 describe("svgLinks", () => {
   const source = "tests/examples/other";
@@ -545,11 +460,7 @@ describe("history.pushState", () => {
   test("in case of browser redirect it creates 2 files", () => {
     expect(filesCreated()).toEqual(3);
     expect(names()).toEqual(
-      expect.arrayContaining([
-        `/${source}/404.html`,
-        `/${source}/history-push.html`,
-        `/${source}/hello/index.html`
-      ])
+      expect.arrayContaining([`/${source}/404.html`, `/${source}/history-push.html`, `/${source}/hello/index.html`])
     );
   });
 });
@@ -562,11 +473,7 @@ describe("history.pushState in sub-directory", () => {
   test("in case of browser redirect it creates 2 files", () => {
     expect(filesCreated()).toEqual(3);
     expect(names()).toEqual(
-      expect.arrayContaining([
-        `/${source}/404.html`,
-        `/${source}/history-push.html`,
-        `/${source}/hello/index.html`
-      ])
+      expect.arrayContaining([`/${source}/404.html`, `/${source}/history-push.html`, `/${source}/hello/index.html`])
     );
   });
 });
@@ -583,7 +490,7 @@ describe("history.pushState two redirects to the same file", () => {
         `/${source}/404.html`,
         `/${source}/history-push.html`,
         `/${source}/hello/index.html`,
-        `/${source}/history-push-more.html`
+        `/${source}/history-push-more.html`,
       ])
     );
   });

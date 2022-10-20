@@ -2,18 +2,12 @@
 
 const url = require("url");
 const { run } = require("./index.js");
-const {
-  reactSnap,
-  homepage,
-  devDependencies,
-  dependencies
-} = require(`${process.cwd()}/package.json`);
+const { reactSnap, homepage, devDependencies, dependencies } = require(`${process.cwd()}/package.json`);
 
 const publicUrl = process.env.PUBLIC_URL || homepage;
 
 const reactScriptsVersion = parseInt(
-  (devDependencies && devDependencies["react-scripts"])
-  || (dependencies && dependencies["react-scripts"])
+  (devDependencies && devDependencies["react-scripts"]) || (dependencies && dependencies["react-scripts"])
 );
 let fixWebpackChunksIssue;
 switch (reactScriptsVersion) {
@@ -26,13 +20,12 @@ switch (reactScriptsVersion) {
 }
 
 const parcel = Boolean(
-  (devDependencies && devDependencies["parcel-bundler"])
-  || (dependencies && dependencies["parcel-bundler"])
+  (devDependencies && devDependencies["parcel-bundler"]) || (dependencies && dependencies["parcel-bundler"])
 );
 
 if (parcel) {
   if (fixWebpackChunksIssue) {
-    console.log("Detected both Parcel and CRA. Fixing chunk names for CRA!")
+    console.log("Detected both Parcel and CRA. Fixing chunk names for CRA!");
   } else {
     fixWebpackChunksIssue = "Parcel";
   }
@@ -41,8 +34,8 @@ if (parcel) {
 run({
   publicPath: publicUrl ? url.parse(publicUrl).pathname : "/",
   fixWebpackChunksIssue,
-  ...reactSnap
-}).catch(error => {
+  ...reactSnap,
+}).catch((error) => {
   console.error(error);
   process.exit(1);
 });
